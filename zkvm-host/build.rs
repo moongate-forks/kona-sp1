@@ -2,6 +2,7 @@ use std::process::Command;
 
 use sp1_helper::{build_program_with_args, BuildArgs};
 
+/// Build a native program.
 fn build_native_program(program: &str) {
     let status = Command::new("cargo")
         .args([
@@ -25,6 +26,7 @@ fn build_native_program(program: &str) {
     );
 }
 
+/// Build a program for the zkVM.
 fn build_zkvm_program(program: &str) {
     build_program_with_args(
         &format!("../{}", program),
@@ -43,4 +45,6 @@ fn main() {
         build_native_program(program);
         build_zkvm_program(program);
     }
+
+    build_zkvm_program("aggregation-client");
 }

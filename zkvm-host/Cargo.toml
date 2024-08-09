@@ -15,11 +15,18 @@ path = "bin/single.rs"
 name = "multi"
 path = "bin/multi.rs"
 
+[[bin]]
+name = "agg"
+path = "bin/agg.rs"
+
 [dependencies]
 
 # workspace
 tokio = { workspace = true }
 clap = { workspace = true }
+cargo_metadata = { workspace = true }
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true }
 
 # kona
 kona-host = { workspace = true }
