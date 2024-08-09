@@ -1,61 +1,50 @@
-use std::fmt;
+use alloy_consensus::Header;
+use alloy_primitives::B256;
+use anyhow::Result;
+use client_utils::RawBootInfo;
+use host_utils::fetcher::{ChainMode, SP1KonaDataFetcher};
 
-use num_format::{Locale, ToFormattedString};
+async fn get_earliest_l1_header(
+    fetcher: &SP1KonaDataFetcher,
+    boot_infos: &Vec<RawBootInfo>,
+) -> Result<Header> {
+    let mut earliest_block_num: u64 = u64::MAX;
+    let mut earliest_l1_header: Option<Header> = None;
 
-/// Statistics for the multi-block execution.
-#[derive(Debug)]
-pub struct ExecutionStats {
-    pub total_instruction_count: u64,
-    pub block_execution_instruction_count: u64,
-    pub nb_blocks: u64,
-    pub nb_transactions: u64,
-    pub total_gas_used: u64,
-}
-
-/// Write a statistic to the formatter.
-fn write_stat(f: &mut fmt::Formatter<'_>, label: &str, value: u64) -> fmt::Result {
-    writeln!(
-        f,
-        "| {:<30} | {:>25} |",
-        label,
-        value.to_formatted_string(&Locale::en)
-    )
-}
-
-impl fmt::Display for ExecutionStats {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let cycles_per_block = self.block_execution_instruction_count / self.nb_blocks;
-        let cycles_per_transaction = self.block_execution_instruction_count / self.nb_transactions;
-        let transactions_per_block = self.nb_transactions / self.nb_blocks;
-        let gas_used_per_block = self.total_gas_used / self.nb_blocks;
-        let gas_used_per_transaction = self.total_gas_used / self.nb_transactions;
-
-        writeln!(
-            f,
-            "+--------------------------------+---------------------------+"
-        )?;
-        writeln!(f, "| {:<30} | {:<25} |", "Metric", "Value")?;
-        writeln!(
-            f,
-            "+--------------------------------+---------------------------+"
-        )?;
-        write_stat(f, "Total Cycles", self.total_instruction_count)?;
-        write_stat(
-            f,
-            "Block Execution Cycles",
-            self.block_execution_instruction_count,
-        )?;
-        write_stat(f, "Total Blocks", self.nb_blocks)?;
-        write_stat(f, "Total Transactions", self.nb_transactions)?;
-        write_stat(f, "Cycles per Block", cycles_per_block)?;
-        write_stat(f, "Cycles per Transaction", cycles_per_transaction)?;
-        write_stat(f, "Transactions per Block", transactions_per_block)?;
-        write_stat(f, "Total Gas Used", self.total_gas_used)?;
-        write_stat(f, "Gas Used per Block", gas_used_per_block)?;
-        write_stat(f, "Gas Used per Transaction", gas_used_per_transaction)?;
-        writeln!(
-            f,
-            "+--------------------------------+---------------------------+"
-        )
+    for boot_info in boot_infos {
+        let l1_block_header = fetcher
+            .get_header_by_hash(ChainMode::L1, boot_info.l1_head)
+            .await?;
+        if l1_block_header.number < earliest_block_num {
+            earliest_block_num = l1_block_header.number;
+            earliest_l1_header = Some(l1_block_header);
+        }
     }
+    Ok(earliest_l1_header.unwrap())
+}
+
+pub async fn fetch_header_preimages(
+    boot_infos: &Vec<RawBootInfo>,
+    latest: B256,
+) -> Result<Vec<Header>> {
+    let fetcher = SP1KonaDataFetcher::new();
+
+    // Get the earliest L1 Head from the boot_infos.
+    let start_header = get_earliest_l1_header(&fetcher, boot_infos).await?;
+
+    // Fetch the full header for the latest L1 Head (which is validated on chain).
+    let mut curr_header = fetcher.get_header_by_hash(ChainMode::L1, latest).await?;
+
+    // Walk back from the latest header until we reach the first header, getting all the preimages.
+    let mut headers = Vec::new();
+    while curr_header.number >= start_header.number {
+        headers.push(curr_header.clone());
+        curr_header = fetcher
+            .get_header_by_hash(ChainMode::L1, curr_header.parent_hash)
+            .await?;
+    }
+
+    // Reverse the headers to put them in order from start to end.
+    headers.reverse();
+    Ok(headers)
 }

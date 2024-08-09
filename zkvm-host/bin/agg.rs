@@ -1,11 +1,12 @@
 use std::fs;
 
+use alloy_primitives::B256;
 use anyhow::Result;
 use cargo_metadata::MetadataCommand;
 use clap::Parser;
 use client_utils::{types::AggregationInputs, RawBootInfo, BOOT_INFO_SIZE};
-use host_utils::fetcher::{ChainMode, SP1KonaDataFetcher};
 use sp1_sdk::{utils, ProverClient, SP1Proof, SP1ProofWithPublicValues, SP1Stdin};
+use zkvm_host::utils::fetch_header_preimages;
 
 pub const AGG_ELF: &[u8] = include_bytes!("../../elf/aggregation-client-elf");
 pub const MULTI_BLOCK_ELF: &[u8] = include_bytes!("../../elf/validity-client-elf");
@@ -17,12 +18,9 @@ struct Args {
     #[arg(short, long, num_args = 1.., value_delimiter = ',')]
     proofs: Vec<String>,
 
+    /// L1 Head
     #[arg(short, long)]
-    multi: bool,
-
-    /// Verbosity level.
-    #[arg(short, long, default_value = "0")]
-    verbosity: u8,
+    latest_l1_head: B256,
 }
 
 /// Load the aggregation proof data.
@@ -61,37 +59,10 @@ async fn main() -> Result<()> {
     utils::setup_logger();
 
     let args = Args::parse();
-    let fetcher = SP1KonaDataFetcher::new();
     let prover = ProverClient::new();
 
     let (proofs, boot_infos) = load_aggregation_proof_data(args.proofs);
-
-    // Fetch the headers from the L1 head of the first boot info to the current L1 head, inclusive.
-    let first_head = boot_infos.last().unwrap().l1_head;
-
-    // Confirm that the headers are in the correct order.
-    let start_header = fetcher
-        .get_header_by_hash(ChainMode::L1, first_head)
-        .await?;
-    // End header is the current L1 head.
-    // TODO: Should this be the finalized header/fetched from a different source?
-    let end_header = fetcher.get_head(ChainMode::L1).await?;
-    if start_header.number > end_header.number {
-        panic!("Headers are not in the correct order");
-    }
-    let mut headers = Vec::new();
-
-    let mut curr_header = end_header.clone();
-    // Fetch the headers from the end header to the start header, inclusive.
-    while curr_header.number >= start_header.number {
-        headers.push(curr_header.clone());
-        curr_header = fetcher
-            .get_header_by_hash(ChainMode::L1, curr_header.parent_hash)
-            .await?;
-    }
-
-    // Reverse the headers to put them in order from start to end.
-    headers.reverse();
+    let headers = fetch_header_preimages(&boot_infos, args.latest_l1_head).await?;
 
     let (_, vkey) = prover.setup(MULTI_BLOCK_ELF);
 
@@ -107,7 +78,7 @@ async fn main() -> Result<()> {
     stdin.write(&AggregationInputs {
         boot_infos,
         headers,
-        l1_head: end_header.hash_slow(),
+        l1_head: args.latest_l1_head,
     });
 
     let (agg_pk, _) = prover.setup(AGG_ELF);
