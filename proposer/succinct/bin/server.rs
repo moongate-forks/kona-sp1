@@ -68,7 +68,7 @@ async fn main() {
         .layer(DefaultBodyLimit::disable())
         .layer(RequestBodyLimitLayer::new(102400 * 1024 * 1024));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
 
     info!("Server listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();

@@ -87,8 +87,9 @@ def query_agg_proofs(db_path) -> [ProofRequest]:
 
 
 if __name__ == "__main__":
-    # Load environment variables from .env file
-    load_dotenv()
+    # If ENV_FILE is set, load environment variables from .env file
+    if os.getenv('ENV_FILE') is not None:
+        load_dotenv(os.getenv('ENV_FILE'))
 
     # Get L2OO_ADDRESS from environment variables
     L2OO_ADDRESS = os.getenv('L2OO_ADDRESS')
@@ -96,17 +97,14 @@ if __name__ == "__main__":
         raise ValueError("L2OO_ADDRESS not found in .env file")
 
     print(f"L2OO_ADDRESS: {L2OO_ADDRESS}")
-    db_path = "../../db/11155420/proofs.db"
+    db_path = "../../db/13269/proofs.db"
 
     # Get all span proofs
     print("\nSpan Proofs:")
     span_proofs = query_span_proofs(db_path)
     
     for proof in span_proofs:
-        proof_time_difference = None
-        if proof.proof_request_time is not None:
-            proof_time_difference = proof.proof_request_time - proof.request_added_time
-            print(f"Request ID: {proof.id}, Type: {proof.type}, Start Block: {proof.start_block}, End Block: {proof.end_block}, Status: {proof.status}, Prover Request ID: {proof.prover_request_id}, Request Added Time: {proof.request_added_time}, Proof Request Time: {proof.proof_request_time}, Proof Time Difference: {proof_time_difference}")
+        print(f"Proof ID: {proof.id}, Type: {proof.type}, Start Block: {proof.start_block}, End Block: {proof.end_block}, Status: {proof.status}, Prover Request ID: {proof.prover_request_id}")
     
     # Query for aggregation proofs
     print("\nAggregation Proofs:")
