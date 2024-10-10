@@ -213,7 +213,7 @@ func (l *L2OutputSubmitter) RequestOPSuccinctProof(p ent.ProofRequest) error {
 		if err != nil {
 			return fmt.Errorf("failed to request AGG proof: %w", err)
 		}
-	} else if p.Type == proofrequest.TypeSPAN {
+	} else if p.Type == proofrequest.TypeRANGE {
 		proofId, err = l.RequestSpanProof(p.StartBlock, p.EndBlock)
 		if err != nil {
 			return fmt.Errorf("failed to request SPAN proof: %w", err)

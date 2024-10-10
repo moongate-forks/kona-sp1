@@ -11,7 +11,7 @@ var (
 	// ProofRequestsColumns holds the columns for the "proof_requests" table.
 	ProofRequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"SPAN", "AGG"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"RANGE", "AGG"}},
 		{Name: "start_block", Type: field.TypeUint64},
 		{Name: "end_block", Type: field.TypeUint64},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"UNREQ", "WITNESSGEN", "PROVING", "FAILED", "COMPLETE"}},

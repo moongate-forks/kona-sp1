@@ -319,7 +319,7 @@ func (db *ProofDB) GetNextUnrequestedProof() (*ent.ProofRequest, error) {
 	spanProof, err := db.client.ProofRequest.Query().
 		Where(
 			proofrequest.StatusEQ(proofrequest.StatusUNREQ),
-			proofrequest.TypeEQ(proofrequest.TypeSPAN),
+			proofrequest.TypeEQ(proofrequest.TypeRANGE),
 		).
 		Order(ent.Asc(proofrequest.FieldStartBlock)).
 		First(context.Background())
@@ -402,7 +402,7 @@ func (db *ProofDB) GetMaxContiguousSpanProofRange(start uint64) (uint64, error) 
 
 	query := client.ProofRequest.Query().
 		Where(
-			proofrequest.TypeEQ(proofrequest.TypeSPAN),
+			proofrequest.TypeEQ(proofrequest.TypeRANGE),
 			proofrequest.StatusEQ(proofrequest.StatusCOMPLETE),
 			proofrequest.StartBlockGTE(start),
 		).
@@ -435,7 +435,7 @@ func (db *ProofDB) GetConsecutiveSpanProofs(start, end uint64) ([][]byte, error)
 	// Query the DB for the span proofs that cover the range [start, end].
 	query := client.ProofRequest.Query().
 		Where(
-			proofrequest.TypeEQ(proofrequest.TypeSPAN),
+			proofrequest.TypeEQ(proofrequest.TypeRANGE),
 			proofrequest.StatusEQ(proofrequest.StatusCOMPLETE),
 			proofrequest.StartBlockGTE(start),
 			proofrequest.EndBlockLTE(end),

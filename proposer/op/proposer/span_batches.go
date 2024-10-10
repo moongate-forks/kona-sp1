@@ -61,7 +61,7 @@ func (l *L2OutputSubmitter) DeriveNewSpanBatches(ctx context.Context) error {
 	spans := l.CreateSpans(newL2StartBlock, newL2EndBlock)
 	// Add each span to the DB. If there are no spans, we will not create any proofs.
 	for _, span := range spans {
-		err := l.db.NewEntry(proofrequest.TypeSPAN, span.Start, span.End)
+		err := l.db.NewEntry(proofrequest.TypeRANGE, span.Start, span.End)
 		l.Log.Info("New range proof request.", "start", span.Start, "end", span.End)
 		if err != nil {
 			l.Log.Error("failed to add span to db", "err", err)
