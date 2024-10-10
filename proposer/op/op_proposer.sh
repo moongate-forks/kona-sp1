@@ -14,6 +14,6 @@
     --beacon-rpc=${L1_BEACON_RPC} \
     --max-concurrent-proof-requests=${MAX_CONCURRENT_PROOF_REQUESTS:-10} \
     --db-path=${DB_PATH:-/usr/local/bin/dbdata} \
-    --op-succinct-server-url=${OP_SUCCINCT_SERVER_URL:-http://op-succinct-server:3000} \
+    --op-succinct-server-url=${OP_SUCCINCT_SERVER_URL:-http://op-succinct-server:3002} \
     --max-block-range-per-span-proof=${MAX_BLOCK_RANGE_PER_SPAN_PROOF:-20} \
     --use-cached-db=${USE_CACHED_DB:-false}
