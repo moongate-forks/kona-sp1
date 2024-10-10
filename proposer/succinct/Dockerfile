@@ -36,8 +36,8 @@ COPY programs ./programs
 # Build the server
 RUN cargo build --bin server --release
 
-# Expose port 3000
-EXPOSE 3000
+# Expose port 3004
+EXPOSE 3004
 
 # Run the server
 CMD ["/app/target/release/server"]
